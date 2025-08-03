@@ -1,10 +1,8 @@
-# insurance-modeling
-R language models to predict car crash probability and insurance default amount. 
-
-# Predicting Insurance Purchase Behavior
+# loan-default-modeling
+Using R language models, with clients demographic and behavioral data, to predict loan default probability and default amount. 
 
 ## 🧠 Objective
-This project aims to predict at what probability(0-1) a customer is likely to crash a car and how a car insurance company should price their customers based on the customer behavior.
+This project aims to predict at what probability(0-1) a customer is likely to defualt a bank loan and how much loan amount a bank should give individual clients.
 
 ## 🛠️ Tools
 - R (ggplot2)
