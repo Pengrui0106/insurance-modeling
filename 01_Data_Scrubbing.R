@@ -2,8 +2,8 @@
 #Read the data into R
 PATH = "/Users/raypeng/Documents/IS 5213 Data science and big data/Insurance"
 
-FILE_NAME <- "Insurance.csv"
-OUT_NAME <- "Insurance_Scrubbed.csv"
+FILE_NAME <- "HMEQ_Loss.csv"
+OUT_NAME <- "HMEQ_Loss_Scrubbed.csv"
 
 INFILE <- file.path(PATH, FILE_NAME)
 OUTFILE <- file.path(PATH, OUT_NAME)
@@ -25,53 +25,46 @@ head (df)
 
 #Step 2: Box-Whisker Plots
 #Plot a box plot of all the numeric variables split by the grouping variable.
-group_var <- df$TARGET_CLM_FLAG
-numeric_vars <- c("KIDSDRIV", "AGE", "HOMEKIDS", "YOJ", "INCOME", "HOME_VAL",
-                  "TRAVTIME", "BLUEBOOK", "TIF", "NPOLICY", "OLDCLAIM", "CLM_FREQ",
-                  "MVR_PTS", "CAR_AGE")
-#par(mfrow = c(4, 4), oma = c(0, 0, 2, 0))
+group_var <- df$TARGET_BAD_FLAG
+
+numeric_vars <- c("LOAN", "MORTDUE", "VALUE", "YOJ", "DEROG",
+                  "DELINQ", "CLAGE", "NINQ", "CLNO", "DEBTINC")
 
 for (var in numeric_vars) {
   boxplot(
     df[[var]] ~ group_var,
-#The MAIN TITLE of the box plot should be set to your name
+    #The MAIN TITLE of the box plot should be set to your name
     main = "Rui Peng",
-    xlab = "Claim Status",
+    xlab = "Bad Loan",
     ylab = var,
     
-#Add color to the boxes
+    #Add color to the boxes
     col = c("lightblue", "lightpink")
   )
 }
 
-
-#par(mfrow = c(1, 1))
-
-
 #Comment on whether or not there are any observable differences in the box plots between the two groups.
-#So according to my observation, those people tend to claim the car insurance: 
-#younger age, more home kids, less income and less home value
-#who claimed before and have claimed many times, who had more traffic tickets before
+#So according to my observation, those people tend to have bad loan: 
+#less loan amount, less mortgage due, less house value, less year of job,less credit line age
+#who borrowed money more often, who have a higher debt to income ratio
 
 #Step 3: Histograms
 #Plot a histogram of at least one of the numeric variables
-par(mfrow = c(1, 2))
-
 hist(
-  df$TRAVTIME,
-#Manually set the number of breaks to a value that makes sense
-  breaks = 30,
+  df$LOAN,
+  #Manually set the number of breaks to a value that makes sense
+  breaks = 20,
   col = "lightblue", 
   border = "white",
-  xlab = "Travel time (minutes)",
+  xlab = "Loan (dollars)",
   ylab = "Density",
-  main = "Histogram of Travel Time",
+  main = "Histogram of Loan",
   freq = FALSE
 )
 
 #Superimpose a density line to the graph
 lines(
-  density(df$TRAVTIME, bw = 5),
+  density(df$LOAN, bw = 2000),
   col = "darkred",
   lwd = 3
 )
@@ -83,260 +76,156 @@ legend(
   lwd = 3,
   bty = "n"
 )
-
-hist(
-  df$BLUEBOOK,
-  breaks = 25,
-  col = "lightblue", 
-  border = "white",
-  xlab = "Bluebook value of the car (dollars)",
-  ylab = "Density",
-  main = "Histogram of Bluebook",
-  freq = FALSE
-)
-
-lines(
-  density(df$BLUEBOOK, bw = 1000),
-  col = "darkred",
-  lwd = 3
-)
-
-legend(
-  "topright",
-  legend = c("Density Curve"), 
-  col = "darkred", 
-  lwd = 3,
-  bty = "n"
-)
-
-par(mfrow = c(1, 1))
 
 #Step 4: Impute "Fix" all the numeric variables that have missing values
 #For the missing Target variables, simply set the missing values to zero
 
-#Var 1: TARGET_CLM_AMT
-df$TARGET_CLM_AMT[is.na(df$TARGET_CLM_AMT)] = 0
+#Var 1: TARGET_LOSS_AMT
+df$TARGET_LOSS_AMT[is.na(df$TARGET_LOSS_AMT)] <- 0
 
-#Var 2: AGE
-summary(df$AGE)
+#Var 2: MORTDUE
+summary(df$MORTDUE)
 
 #The median or mean value will be useful in most cases.
-median(df$AGE, na.rm = TRUE)
+median(df$MORTDUE, na.rm = TRUE)
 
 #Create two new variables: #One variable beginning with IMP_ and the second value beginning with M_.
-df$IMP_AGE <- df$AGE
-df$IMP_AGE[ is.na(df$AGE) ] = 45
-df$M_AGE = is.na(df$AGE) + 0
+df$IMP_MORTDUE <- df$MORTDUE
+df$IMP_MORTDUE[ is.na(df$MORTDUE) ] = 65019
+df$M_MORTDUE = is.na(df$MORTDUE) + 0
 
 #Compute a sum for all the M_ variables
-sum(df$M_AGE)
+sum(df$M_MORTDUE)
 summary(df)
 
 #Delete the original variable after it has been imputed.
-df$AGE = NULL
+df$MORTDUE = NULL
 summary(df)
-
-#Var 3: YOJ
-df$IMP_YOJ <- df$YOJ
-df$IMP_YOJ[ is.na(df$YOJ) ] = 11
-df$M_YOJ = is.na(df$YOJ) + 0
-
-df$YOJ = NULL
-sum (df$M_YOJ)
-
-#Var 4: INCOME
-#INCOME solution 1 - zero dollars
-df$IMP_INCOME <- df$INCOME
-df$IMP_INCOME[ is.na(df$INCOME) ] = 0
-df$M_INCOME = is.na(df$INCOME) + 0
-head(df$INCOME, 20)
-
-#INCOME solution 2 - simple
-df$IMP_INCOME <- df$INCOME
-df$IMP_INCOME[ is.na(df$INCOME) ] = 53529
-df$M_INCOME = is.na(df$INCOME) + 0
 
 #Try one complex imputation like the one described in the lectures.
-#INCOME solution 3 - complex
-a = aggregate(x=df$INCOME, by=list(df$JOB), na.rm = TRUE, FUN = median)
+#Var 3: VALUE
+summary(df$VALUE)
+a = aggregate(x=df$VALUE, by=list(df$JOB), na.rm = TRUE, FUN = median)
 a = a[ order(a$x, decreasing = TRUE), ]
 
-df$IMP_INCOME = df$INCOME
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Doctor")] = 121398
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Lawyer")] = 83230
+df$IMP_VALUE = df$VALUE
+df$IMP_VALUE[ is.na(df$VALUE) & (df$JOB == "Self")] = 130631
+df$IMP_VALUE[ is.na(df$VALUE) & (df$JOB == "ProfExe")] = 110007
 
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Manager")] = 78589
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Professional")] = 71230
+df$IMP_VALUE[ is.na(df$VALUE) & (df$JOB == "Mgr")] = 101258
+df$IMP_VALUE[ is.na(df$VALUE) & (df$JOB == "Office")] = 89094.5
 
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Blue Collar")] = 53694
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Clerical")] = 30800
+df$IMP_VALUE[ is.na(df$VALUE) & (df$JOB == "Sales")] = 84473.5
+df$IMP_VALUE[ is.na(df$VALUE) & (is.na(df$JOB))] = 78227
+df$IMP_VALUE[ is.na(df$VALUE) & (df$JOB == "Other")] = 76599.5
 
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Home Maker")] = 776
-df$IMP_INCOME[ is.na(df$INCOME) & (df$JOB == "Student")] = 360
+df$IMP_VALUE[ is.na(df$IMP_VALUE)] = 89236 
+df$M_VALUE = is.na(df$VALUE) + 0
+sum(df$M_VALUE)
 
-df$IMP_INCOME[ is.na(df$IMP_INCOME)] = 109953
-df$M_INCOME = is.na(df$INCOME) + 0
-sum(df$M_INCOME)
-
-df$INCOME = NULL
+df$VALUE = NULL
 summary(df)
 
-#Var 5: HOME_VAL
-a = aggregate(x=df$HOME_VAL, by=list(df$JOB), na.rm = TRUE, FUN = median)
-a = a[ order(a$x, decreasing = TRUE), ]
+#Var 4: YOJ
+summary(df$YOJ)
+df$IMP_YOJ <- df$YOJ
+df$IMP_YOJ[is.na(df$YOJ)] <- 7
+df$M_YOJ <- is.na(df$YOJ) + 0
 
-df$IMP_HOME_VAL = df$HOME_VAL
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Doctor")] = 282708
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Lawyer")] = 229325
-
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Manager")] = 221902
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Professional")] = 211874
-
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Blue Collar")] = 176831
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Clerical")] = 13363
-
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Home Maker")] = 92207
-df$IMP_HOME_VAL[ is.na(df$HOME_VAL) & (df$JOB == "Student")] = 0
-
-df$IMP_HOME_VAL[ is.na(df$IMP_HOME_VAL)] = 240261
-df$M_HOME_VAL = is.na(df$HOME_VAL) + 0
-sum(df$M_HOME_VAL)
-
-df$HOME_VAL = NULL
+sum(df$M_YOJ)
+df$YOJ = NULL
 summary(df)
 
-#Var 6: CAR_AGE
-median(df$CAR_AGE, na.rm = TRUE)
-df$IMP_CAR_AGE <- df$CAR_AGE
-df$IMP_CAR_AGE[ is.na(df$CAR_AGE) ] = 8
-df$M_CAR_AGE = is.na( df$CAR_AGE ) + 0
-sum (df$M_CAR_AGE)
+#Var 5: DEROG
+summary(df$DEROG)
+df$IMP_DEROG <- df$DEROG
+df$IMP_DEROG[is.na(df$DEROG)] <- 0
+df$M_DEROG <- is.na(df$DEROG) + 0
 
-df$CAR_AGE = NULL
+sum(df$M_DEROG)
+df$DEROG = NULL
+summary(df)
+
+#Var 6: DELINQ
+summary(df$DELINQ)
+df$IMP_DELINQ <- df$DELINQ
+df$IMP_DELINQ[is.na(df$DELINQ)] <- 0
+df$M_DELINQ <- is.na(df$DELINQ) + 0
+
+sum(df$M_DELINQ)
+df$DELINQ = NULL
+summary(df)
+
+#Var 7: CLAGE
+summary(df$CLAGE)
+df$IMP_CLAGE <- df$CLAGE
+df$IMP_CLAGE[is.na(df$CLAGE)] <- 173.5
+df$M_CLAGE <- is.na(df$CLAGE) + 0
+
+sum(df$M_CLAGE)
+df$CLAGE = NULL
+summary(df)
+
+#Var 8: NINQ
+summary(df$NINQ)
+df$IMP_NINQ <- df$NINQ
+df$IMP_NINQ[is.na(df$NINQ)] <- 1
+df$M_NINQ <- is.na(df$NINQ) + 0
+
+sum(df$M_NINQ)
+df$NINQ = NULL
+summary(df)
+
+#Var 9: CLNO
+summary(df$CLNO)
+df$IMP_CLNO <- df$CLNO
+df$IMP_CLNO[is.na(df$CLNO)] <- 20
+df$M_CLNO <- is.na(df$CLNO) + 0
+
+sum(df$M_CLNO)
+df$CLNO = NULL
+summary(df)
+
+#Var 10: DEBTINC
+summary(df$DEBTINC)
+df$IMP_DEBTINC <- df$DEBTINC
+df$IMP_DEBTINC[is.na(df$DEBTINC)] <- 34.8183
+df$M_DEBTINC <- is.na(df$DEBTINC) + 0
+
+sum(df$M_DEBTINC)
+df$DEBTINC = NULL
+
 #Run a summary to prove that all the variables have been imputed
 summary(df)
-
 
 #Step 5: One Hot Encoding
 #For char/category variables, perform one hot encoding. For this create a Flag for each categories.
 
-#Char 1: Parent1
-df$FLAG.SingleParent = (df$PARENT1 == "Yes") + 0
-sum(df$FLAG.SingleParent)
+#Char 1: REASON
+table(df$REASON)
+df$FLAG.Reason.DebtCon = (df$REASON == "DebtCon") + 0
+df$FLAG.Reason.HomeImp = (df$REASON == "HomeImp") + 0
 
 #Delete the original class variable
-df$PARENT1 = NULL
+df$REASON = NULL
 
 #Run a summary to show that the category variables have been replaced by Flag variables.
 summary(df)
 
-#Char 2: MSTATUS
-table(df$MSTATUS)
-df$FLAG.Married = (df$MSTATUS == "Yes") + 0
-sum(df$FLAG.Married)
-df$MSTATUS = NULL
-summary(df)
-
-#Char 3: SEX
-table(df$SEX)
-df$FLAG.Male = (df$SEX == "M") + 0
-sum(df$FLAG.Male)
-df$SEX = NULL
-summary(df)
-
-#Char 4: EDUCATION
-table(df$EDUCATION)
-df$FLAG.EDU.d_HS = (df$EDUCATION %in% c("a_PhD", "b_Masters", "c_Bachelors", "d_High School")) + 0
-df$FLAG.EDU.c_BS = (df$EDUCATION %in% c("a_PhD", "b_Masters", "c_Bachelors")) + 0
-df$FLAG.EDU.b_MS = (df$EDUCATION %in% c("a_PhD", "b_Masters")) + 0
-df$FLAG.EDU.a_PhD = (df$EDUCATION %in% c("a_PhD")) + 0
-
-sum(df$FLAG.EDU.d_HS)
-sum(df$FLAG.EDU.c_BS)
-sum(df$FLAG.EDU.b_MS)
-sum(df$FLAG.EDU.a_PhD)
-
-df$EDUCATION = NULL
-head(df)
-
-#Char 5: JOB
+#Char 2: JOB
 table(df$JOB)
-df$FLAG.Job.BlueCollar = (df$JOB == "Blue Collar") + 0
-df$FLAG.Job.Clerical = (df$JOB == "Clerical") + 0
+df$FLAG.Job.Mgr = (df$JOB == "Mgr") + 0
+df$FLAG.Job.Office = (df$JOB == "Office") + 0
 
-df$FLAG.Job.Doctor = (df$JOB == "Doctor") + 0
-df$FLAG.Job.HomeMaker = (df$JOB == "Home Maker") + 0
+df$FLAG.Job.Other = (df$JOB == "Other") + 0
+df$FLAG.Job.ProfExe = (df$JOB == "ProfExe") + 0
 
-df$FLAG.Job.Lawyer = (df$JOB == "Lawyer") + 0
-df$FLAG.Job.Manager = (df$JOB == "Manager") + 0
+df$FLAG.Job.Sales = (df$JOB == "Sales") + 0
+df$FLAG.Job.Self = (df$JOB == "Self") + 0
 
-df$FLAG.Job.Professional = (df$JOB == "Professional") + 0
-df$FLAG.Job.Student = (df$JOB == "Student") + 0
-
-df$FLAG.Job.Salary = (df$JOB %in% c("Doctor", "Lawyer", "Manager", "Professional")) + 0
-
-sum(df$FLAG.Job.BlueCollar)
-sum(df$FLAG.Job.Clerical)
-
-sum(df$FLAG.Job.Doctor)
-sum(df$FLAG.Job.HomeMaker)
-
-sum(df$FLAG.Job.Lawyer)
-sum(df$FLAG.Job.Manager)
-
-sum(df$FLAG.Job.Professional)
-sum(df$FLAG.Job.Student)
-sum(df$FLAG.Job.Salary)
-
+df$FLAG.Job.Salary = (df$JOB %in% c("Self", "ProfExe", "Mgr")) + 0
 df$JOB = NULL
 
-#Char 6: CAR_USE
-table(df$CAR_USE)
-df$FLAG.CommercialUse = (df$CAR_USE == "Commercial") + 0
-sum(df$FLAG.CommercialUse)
-df$CAR_USE = NULL
-summary(df)
-
-#Char 7: CAR_TYPE
-table(df$CAR_TYPE)
-
-df$FLAG.CAR.Minivan = (df$CAR_TYPE == "Minivan") + 0
-df$FLAG.CAR.PanelTruck = (df$CAR_TYPE == "Panel Truck") + 0
-
-df$FLAG.CAR.Pickup = (df$CAR_TYPE == "Pickup") + 0
-df$FLAG.CAR.SportsCar = (df$CAR_TYPE == "Sports Car") + 0
-
-df$FLAG.CAR.SUV = (df$CAR_TYPE == "SUV") + 0
-df$FLAG.CAR.Van = (df$CAR_TYPE == "Van") + 0
-
-sum(df$FLAG.CAR.Minivan)
-sum(df$FLAG.CAR.PanelTruck)
-sum(df$FLAG.CAR.Pickup)
-sum(df$FLAG.CAR.SportsCar)
-sum(df$FLAG.CAR.SUV)
-sum(df$FLAG.CAR.Van)
-
-df$CAR_TYPE = NULL
-summary(df)
-
-#Char 8: RED_CAR
-table(df$RED_CAR)
-df$FLAG.RedCar = (df$RED_CAR == "yes") + 0
-sum(df$FLAG.RedCar)
-df$RED_CAR = NULL
-summary(df)
-
-#Char 9: REVOKED
-df$FLAG.Revoked = (df$REVOKED == "Yes") + 0
-sum(df$FLAG.Revoked)
-df$REVOKED = NULL
-summary(df)
-
-#Char 10: URBANICITY
-table(df$URBANICITY)
-df$FLAG.Urban = (df$URBANICITY == "Highly Urban/ Urban") + 0
-sum(df$FLAG.Urban)
-df$URBANICITY = NULL
 summary(df)
 
 write.csv(df, OUTFILE, row.names = FALSE)
