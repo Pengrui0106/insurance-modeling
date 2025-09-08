@@ -24,13 +24,13 @@ Compare different RMSEs of different decision tree models to decide which tree i
 
 ## ➡️ Step 4: Model Comparison
 Compare decision tree, random forest, gradient boosting, logistic regression, linear regression models to see which has a better performance in ROC/RMSE.
-![ROC Curve](images/roc_curve.png)
+![ROC Curve](./images/roc_curve.png)
 
 ## ➡️ Step 5: Reduce Dimensionalities with PCA and tSNE
 Add new PCA variables into Step 4 random forest decision tree to see whether it improves the accuracy.
 
 ## ➡️ Step 6: 📊 Insights and Results Sharing with Cluster Analysis
-![cluster](images/cluster.png)
+![cluster](./images/cluster.png)
 Black(C1) means "poor" but responsible;
 Green(C3) means "average income" and responsible;
 Red(C2) means "rich" but more possible to default because they have more loan amount.
